@@ -75,33 +75,120 @@ crime-hotspot-prediction/
 
 ## 📊 Results & Exploration
 
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#-results--exploration)
+
 The full analysis, model training, evaluation, and visual exploration are documented in [`notebooks/exploration_and_results.ipynb`](https://github.com/sanhi123/Crime-Data-Warehouse/blob/main/notebooks/exploration_and_results.ipynb).
 
 The notebook covers:
 
 - Exploratory analysis of crime data across temporal, spatial, and categorical dimensions
 - Crime distribution and hotspot analysis
-- K-means based crime hotspot identification
+- K-Means based crime hotspot identification
 - ConvLSTM-based spatiotemporal hotspot prediction
+- GNN (GCRN) based spatial-temporal modelling
+- Learned regional embeddings and embedding-enhanced ConvLSTM
 - Model training and validation analysis
-- Comparison of predicted and actual crime hotspot patterns
-- Visualization of spatial crime concentration
-- Analysis of victim risk, case closure, and police deployment prediction
-- Model performance evaluation using classification and regression metrics
+- Comparison of predicted and actual hotspot patterns
+- Precision@K, Recall@K, PAI@K, MAE, RMSE, and calibration evaluation
+- Police deployment prediction
+- Case closure prediction
+- Victim risk profiling
+- Crime intelligence and forecasting
 
 ### Hotspot Prediction
 
-The project uses K-means clustering as a baseline for identifying spatial crime concentration and ConvLSTM to model the temporal evolution of crime hotspots.
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#hotspot-prediction)
 
-The ConvLSTM model achieved a **best validation loss of -2.4369** during training.
+The spatiotemporal pipeline represents crime activity using an **8 × 8 spatial grid** across **260 weekly time steps from 2020–2024**, covering **21 crime categories**. A chronological 70% / 15% / 15% train-validation-test split is used.
 
-The notebook also provides visual comparisons between historical crime patterns and predicted hotspot regions.
+The project evaluates four approaches:
 
-> **Note:** Detailed Precision@K, Recall@K, PAI, and rolling backtest values should be added here once the final hotspot evaluation pipeline is completed.
+1. K-Means Baseline
+2. ConvLSTM
+3. GNN (GCRN)
+4. Amplified ConvLSTM with Learned Embeddings
+
+### Hotspot Model Comparison
+
+| Model | MAE ↓ | RMSE ↓ | Precision@10 ↑ | Recall@10 ↑ | PAI@10 ↑ | ECE ↓ |
+|---|---:|---:|---:|---:|---:|---:|
+| K-Means Baseline | 2.2603 | 5.7430 | **0.9368** | **0.8732** | **5.5886** | 4.8645 |
+| ConvLSTM | 5.3644 | 7.6992 | 0.2289 | 0.2929 | 1.8746 | 2.8423 |
+| GNN (GCRN) | 4.0788 | 7.1130 | 0.4026 | 0.5036 | 3.2228 | 1.7404 |
+| Amplified ConvLSTM (Embeddings) | **2.0175** | **4.1983** | 0.8579 | 0.8269 | 5.2921 | **1.3158** |
+
+### Key Hotspot Findings
+
+- **K-Means achieved the highest Precision@10 of 0.9368**, indicating strong performance in identifying the most concentrated hotspot regions.
+- **K-Means also achieved the highest Recall@10 of 0.8732 and PAI@10 of 5.5886** among the evaluated models.
+- **Amplified ConvLSTM with learned embeddings achieved the lowest MAE of 2.0175 and RMSE of 4.1983**, providing the strongest numerical prediction accuracy.
+- The embedding-enhanced ConvLSTM achieved the lowest calibration error with an **ECE of 1.3158**.
+- **GNN (GCRN)** improved substantially over the standard ConvLSTM on Precision@10, Recall@10, and PAI@10.
+- The standard ConvLSTM produced weaker hotspot-ranking performance than the other evaluated approaches.
+
+Compared with the standard ConvLSTM, the Amplified ConvLSTM with learned embeddings achieved approximately:
+
+- **62.4% lower MAE**
+- **45.5% lower RMSE**
+- **53.7% lower calibration error (ECE)**
+
+These results show that model complexity alone does not guarantee better hotspot-ranking performance. The K-Means baseline remains highly competitive for identifying concentrated hotspots, while learned embeddings substantially improve the numerical accuracy and calibration of the ConvLSTM architecture.
+
+### ConvLSTM Training
+
+The standard ConvLSTM achieved a **best validation loss of -2.4369** during training.
+
+The notebook includes training and validation curves to analyze model convergence and potential overfitting, along with visual comparisons between historical crime patterns and predicted hotspot regions.
+
+---
+
+### Forecasting Examples
+
+The trained spatiotemporal forecasting pipeline can generate next-week crime-risk estimates for individual locations and grid cells.
+
+#### Mumbai
+
+| Prediction | Result |
+|---|---|
+| Location | Mumbai |
+| Grid Cell | [2, 1] |
+| Predicted Risk Level | **Low Risk** |
+| Expected Crime Count | **22.73 incidents** |
+| Historical Average | **64.32 incidents** |
+| Difference from Historical Average | **−64.7%** |
+
+#### Delhi
+
+| Prediction | Result |
+|---|---|
+| Location | Delhi |
+| Grid Cell | [5, 2] |
+| Predicted Risk Level | **Low Risk** |
+| Expected Crime Count | **18.12 incidents** |
+| Historical Average | **51.12 incidents** |
+| Difference from Historical Average | **−64.6%** |
+
+The forecasting results demonstrate how the system can convert historical crime patterns into location-specific future risk estimates.
+
+### Historical Crime Volume
+
+The cities with the highest historical crime volume in the analyzed dataset were:
+
+| Rank | City | Recorded Cases |
+|---:|---|---:|
+| 1 | Delhi | **10,442** |
+| 2 | Mumbai | **8,592** |
+| 3 | Bangalore | **7,113** |
+
+Historical crime volume and predicted future risk are treated as separate analytical signals. A city with high historical crime volume does not necessarily receive a high predicted risk for a particular future time window.
+
+---
 
 ### Police Deployment Prediction
 
-The project also evaluates machine learning models for predicting police deployment requirements.
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#police-deployment-prediction)
+
+The project evaluates machine learning models for predicting police deployment requirements from crime-related features.
 
 | Model | R² Score |
 |---|---:|
@@ -109,7 +196,7 @@ The project also evaluates machine learning models for predicting police deploym
 | Random Forest | 0.0813 |
 | Gradient Boosting | **0.1149** |
 
-The Gradient Boosting model achieved the best test R² score of **0.1149**.
+The **Gradient Boosting model achieved the best test R² of 0.1149** among the evaluated models.
 
 Additional evaluation results:
 
@@ -117,9 +204,15 @@ Additional evaluation results:
 - Test samples: **15,759**
 - Test MSE: **26.6009**
 - Test RMSE: **5.1576**
-- 5-fold cross-validation R²: **-0.0288 ± 0.0052**
+- 5-fold cross-validation R²: **−0.0288 ± 0.0052**
+
+The relatively low R² indicates that the available features explain only a limited portion of the variation in police deployment requirements, suggesting that additional operational and contextual variables could improve future predictions.
+
+---
 
 ### Case Closure Prediction
+
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#case-closure-prediction)
 
 The case closure prediction model achieved **99.84% test accuracy**.
 
@@ -127,12 +220,18 @@ The test confusion matrix was:
 
 | Actual / Predicted | Not Closed | Closed |
 |---|---:|---:|
-| Not Closed | 7,984 | 16 |
-| Closed | 10 | 7,749 |
+| **Not Closed** | 7,984 | 16 |
+| **Closed** | 10 | 7,749 |
 
-While the accuracy is high, this result should be interpreted carefully because some features may only become available later in the crime investigation lifecycle. Such variables can introduce **data leakage** if they are used to predict an outcome that occurs before those variables are known.
+The model correctly classified the majority of both closed and non-closed cases.
+
+However, the very high accuracy should be interpreted carefully. Some features may become available only after an investigation progresses. Using such variables to predict case closure can introduce **temporal data leakage** and produce overly optimistic evaluation results.
+
+---
 
 ### Victim Risk Profiling
+
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#victim-risk-profiling)
 
 The victim risk profiling component predicts crime-risk categories using contextual information such as location, age, gender, and time of occurrence.
 
@@ -145,33 +244,74 @@ Example prediction:
 | Gender | Male |
 | Time | Night |
 | Predicted Crime Category | Other Crime |
-| Risk Level | Medium |
-| Risk Score | 57.8% |
+| Risk Level | **Medium** |
+| Risk Score | **57.8%** |
 
-The evaluated model achieved:
+### Victim Risk Model Performance
 
 - Accuracy: **55.74%**
 - Macro F1-score: **0.19**
 - Weighted F1-score: **0.41**
 
-The results indicate that performance varies significantly across crime categories, highlighting the difficulty of predicting relatively sparse crime classes.
+Class-level performance:
+
+| Crime Category | Precision | Recall | F1-score |
+|---|---:|---:|---:|
+| Fire Accident | 0.00 | 0.00 | 0.00 |
+| Other Crime | 0.56 | 0.99 | 0.71 |
+| Traffic Fatality | 0.00 | 0.00 | 0.00 |
+| Violent Crime | 0.57 | 0.02 | 0.03 |
+
+The results indicate substantial class imbalance. The model performs strongly on the dominant **Other Crime** category but has limited performance on minority categories.
+
+This highlights the importance of class-balanced evaluation rather than relying only on overall accuracy.
+
+---
 
 ### Overall Results
 
-The project demonstrates how a crime data warehouse can support multiple analytical and predictive tasks through a unified data pipeline.
+[svg](https://github.com/sanhi123/Crime-Data-Warehouse#overall-results)
 
-The implemented components include:
+The project demonstrates how a unified crime data warehouse can support multiple analytical, predictive, and decision-support tasks.
 
-- Spatial crime hotspot detection
-- Spatiotemporal hotspot prediction
-- Police deployment prediction
-- Case closure prediction
-- Victim risk profiling
-- Crime trend and distribution analysis
-- Interactive crime intelligence and visualization
+| Component | Key Result |
+|---|---|
+| Spatial Representation | **8 × 8 geographic grid** |
+| Temporal Representation | **260 weekly time steps** |
+| Crime Categories | **21** |
+| Best Hotspot Precision@10 | **K-Means — 0.9368** |
+| Best Hotspot Recall@10 | **K-Means — 0.8732** |
+| Best Hotspot PAI@10 | **K-Means — 5.5886** |
+| Best Hotspot MAE | **Amplified ConvLSTM — 2.0175** |
+| Best Hotspot RMSE | **Amplified ConvLSTM — 4.1983** |
+| Best Calibration | **Amplified ConvLSTM — ECE 1.3158** |
+| Best Police Deployment Model | **Gradient Boosting — R² 0.1149** |
+| Case Closure Accuracy | **99.84%** |
+| Victim Risk Accuracy | **55.74%** |
 
-The results also highlight an important practical consideration: **model accuracy alone is not sufficient for evaluating crime analytics systems**. Temporal validation, class imbalance, data leakage, reporting bias, and spatial generalization must also be considered.
+### Overall Interpretation
 
+The experiments show that different modelling approaches are effective for different objectives.
+
+The **K-Means baseline** provides the strongest performance for top-k hotspot identification, achieving the highest Precision@10, Recall@10, and PAI@10.
+
+The **Amplified ConvLSTM with learned embeddings** provides the strongest numerical prediction performance, achieving the lowest MAE and RMSE while also producing the best calibration among the evaluated hotspot models.
+
+The **GNN (GCRN)** provides an intermediate performance profile and improves upon the standard ConvLSTM for hotspot ranking.
+
+The results therefore demonstrate that a strong crime analytics system should not rely on a single model or metric. Baseline models, deep spatiotemporal models, graph-based approaches, and learned representations provide complementary perspectives.
+
+The project also highlights several important considerations for real-world crime analytics:
+
+- Temporal validation is necessary to prevent future information from entering training data.
+- Class imbalance can significantly affect minority-class performance.
+- High classification accuracy does not necessarily imply useful predictive performance.
+- Potential data leakage must be investigated when using investigation-related features.
+- Historical crime volume should be distinguished from future predicted risk.
+- Spatial resolution affects both hotspot detection and model performance.
+- Crime data can contain reporting and sampling biases.
+
+Overall, the project demonstrates an end-to-end workflow for transforming historical crime records into **spatial intelligence, spatiotemporal forecasts, predictive analytics, and decision-support insights** through a unified crime data warehouse.
 ---
 
 

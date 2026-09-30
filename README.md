@@ -51,25 +51,44 @@ A chatbot answers natural-language queries such as "what's the risk forecast for
 ## 📁 Repository Structure
 
 ```
-crime-hotspot-prediction/
-├── data/
-│   ├── raw/                      # original incident records (not committed)
-│   └── processed/                # generated spatiotemporal tensors (not committed)
+Crime-Data-Warehouse/
+├── app.py                         # Streamlit AI assistant
+├── crime_warehouse.db             # SQLite crime data warehouse
+│
+├── rag/
+│   ├── build_index.py             # Build/persist FAISS index
+│   ├── document_builder.py        # Create analytical RAG documents
+│   ├── embeddings.py              # Generate document embeddings
+│   └── retriever.py               # FAISS similarity retrieval
+│
+├── llm/
+│   ├── client.py                  # Google Gemini client
+│   └── prompts.py                 # Grounding prompts
+│
 ├── src/
-│   ├── data_pipeline.py          # grid construction, weekly binning, tensor generation
-│   ├── baseline.py               # K-means clustering baseline
-│   ├── convlstm_model.py         # ConvLSTM architecture and training loop
-│   ├── gnn_model.py              # optional GCRN variant
-│   ├── embeddings.py             # learned region/crime-type embeddings
-│   ├── evaluation.py             # Precision@K, Recall@K, PAI, calibration, backtest
-│   └── chatbot_integration.py    # conversational risk-forecast interface
-├── notebooks/
-│   └── exploration_and_results.ipynb   # full walkthrough, training curves, comparison table
-├── results/
-│   └── comparison_table.csv
+│   ├── assistant.py               # Main AI assistant orchestration
+│   ├── router.py                  # SQL/RAG/FORECAST/HYBRID routing
+│   ├── database.py                # Read-only SQL warehouse interface
+│   ├── chatbot.py                 # Existing conversational functionality
+│   ├── data_pipeline.py           # Data processing pipeline
+│   ├── evaluation.py              # Model evaluation
+│   └── models/
+│       ├── convlstm.py            # ConvLSTM model
+│       ├── embedding_convlstm.py  # ConvLSTM with embeddings
+│       └── gcrn.py                # GCRN model
+│
+├── rag_index/
+│   ├── crime.faiss                # Persisted FAISS vector index
+│   └── documents.json             # RAG document metadata
+│
+├── tests/
+│   └── test_assistant.py          # Assistant/RAG/routing tests
+│
+├── run_pipeline.py                # Existing forecasting pipeline
 ├── requirements.txt
+├── .env.example
+├── .gitignore
 └── README.md
-```
 
 ---
 
@@ -317,27 +336,59 @@ Overall, the project demonstrates an end-to-end workflow for transforming histor
 
 ## ⚙️ Setup & Reproduction
 
+### Installation
+
+Clone the repository and install the required dependencies:
+
 ```bash
-git clone https://github.com/<your-username>/crime-hotspot-prediction.git
-cd crime-hotspot-prediction
+git clone https://github.com/sanhi123/Crime-Data-Warehouse.git
+cd Crime-Data-Warehouse
 pip install -r requirements.txt
 ```
 
-1. Place raw incident data in `data/raw/` (see `src/data_pipeline.py` for expected columns: `timestamp`, `latitude`, `longitude`, `crime_type`)
-2. Run the data pipeline to generate processed tensors:
-   ```bash
-   python src/data_pipeline.py
-   ```
-3. Train the ConvLSTM:
-   ```bash
-   python src/convlstm_model.py
-   ```
-4. Run evaluation and generate the comparison table:
-   ```bash
-   python src/evaluation.py
-   ```
-5. Or open [`notebooks/exploration_and_results.ipynb`](notebooks/exploration_and_results.ipynb) to walk through the full pipeline interactively.
+### Original Analysis and Models
 
+The original data analysis, model development, evaluation, and visualizations are documented in:
+
+`crime_warehouse_enhanced.final..ipynb`
+
+The repository also contains the forecasting and machine learning modules under `src/`.
+
+### Run the AI Crime Intelligence Assistant
+
+Create the environment file:
+
+```bash
+cp .env.example .env
+```
+
+Add your Gemini API key to `.env`:
+
+```text
+GEMINI_API_KEY=your_api_key
+```
+
+Build the RAG index:
+
+```bash
+python -m rag.build_index --db crime_warehouse.db
+```
+
+Start the Streamlit application:
+
+```bash
+streamlit run app.py
+```
+
+The assistant can answer structured SQL questions, retrieve relevant crime evidence using RAG, and generate forecasting responses using the existing spatiotemporal forecasting pipeline.
+
+### Run Tests
+
+```bash
+python -m pytest -q
+```
+
+All project tests should pass before deployment.
 ---
 
 ## 🧠 Design Decisions
